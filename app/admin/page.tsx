@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getReservations } from "@/lib/reservations/getReservations";
 import { getAvailableTimeSlots } from "@/services/getAvailableTimeSlots";
+import type { Reservation } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 export default async function AdminPage({
@@ -36,7 +37,7 @@ export default async function AdminPage({
       {/* Reservas */}
       <h2>Reservas</h2>
       <ul>
-        {reservations.map((reservation) => (
+        {reservations.map((reservation: Reservation) => (
           <li key={reservation.id}>
             {reservation.customerName} -{" "}
             {new Date(reservation.dateTime).toLocaleString()} -{" "}

@@ -123,6 +123,29 @@ Se elimino `lib/restaurants/getCurrentRestaurantId.ts` porque ya no se usa y man
 
 ---
 
+## Actualizacion - Hotfix de build en Vercel (TypeScript)
+
+### Objetivo
+Corregir fallo de compilacion detectado en Vercel por tipado implicito en el panel admin.
+
+### Archivo modificado
+- `app/admin/page.tsx`
+
+### Cambios aplicados
+- se importo `Reservation` desde `@prisma/client`
+- se tiparon explicitamente los items del `map`:
+  - `reservations.map((reservation: Reservation) => ...)`
+
+### Impacto funcional
+- elimina el error `Parameter 'reservation' implicitly has an 'any' type`
+- permite que el build de produccion en Vercel pase correctamente en TypeScript estricto
+
+### Verificacion ejecutada
+- `npm run lint`
+- `npm run build`
+
+---
+
 ## Actualizacion - Modelo de datos para voz y telefonia (Fase 2)
 
 ### Objetivo
