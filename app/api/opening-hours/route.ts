@@ -59,23 +59,29 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.openingHours.deleteMany({
+    await prisma.$transaction([
+      prisma.openingHours.deleteMany({
         where: {
           restaurantId,
         },
-      });
-
-      await tx.openingHours.createMany({
-        data: body.map((item) => ({
-          restaurantId,
-          dayOfWeek: item.dayOfWeek,
-          openTime: item.openTime,
-          closeTime: item.closeTime,
-          isClosed: item.isClosed,
-        })),
-      });
-    });
+      }),
+      prisma.openingHours.createMany({
+        data: body.map(
+          (item: {
+            dayOfWeek: number;
+            openTime: string;
+            closeTime: string;
+            isClosed: boolean;
+          }) => ({
+            restaurantId,
+            dayOfWeek: item.dayOfWeek,
+            openTime: item.openTime,
+            closeTime: item.closeTime,
+            isClosed: item.isClosed,
+          })
+        ),
+      }),
+    ]);
 
     const updatedOpeningHours = await prisma.openingHours.findMany({
       where: {

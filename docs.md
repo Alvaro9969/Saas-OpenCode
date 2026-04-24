@@ -123,6 +123,30 @@ Se elimino `lib/restaurants/getCurrentRestaurantId.ts` porque ya no se usa y man
 
 ---
 
+## Actualizacion - Fix TypeScript en `opening-hours` para deploy
+
+### Objetivo
+Resolver error de build en Vercel por tipado implicito de `tx` dentro de transaccion callback.
+
+### Archivo modificado
+- `app/api/opening-hours/route.ts`
+
+### Cambios aplicados
+- se reemplazo `prisma.$transaction(async (tx) => { ... })` por formato array:
+  - `prisma.$transaction([deleteMany, createMany])`
+- se tiparon explicitamente los elementos usados en `body.map(...)` para evitar `any` implicito
+
+### Impacto funcional
+- elimina el error `Parameter 'tx' implicitly has an 'any' type`
+- mantiene la operacion atomica de reemplazar horarios (delete + create)
+- mejora compatibilidad de TypeScript estricto en build de Vercel
+
+### Verificacion ejecutada
+- `npm run lint`
+- `npm run build`
+
+---
+
 ## Actualizacion - Fix de tipo `Reservation` en Vercel
 
 ### Objetivo
