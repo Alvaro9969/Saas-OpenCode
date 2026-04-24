@@ -123,6 +123,29 @@ Se elimino `lib/restaurants/getCurrentRestaurantId.ts` porque ya no se usa y man
 
 ---
 
+## Actualizacion - Fix de tipo `Reservation` en Vercel
+
+### Objetivo
+Corregir fallo de build en Vercel por import de tipo no exportado desde `@prisma/client`.
+
+### Archivo modificado
+- `app/admin/page.tsx`
+
+### Cambios aplicados
+- se elimino `import type { Reservation } from "@prisma/client"`
+- se creo tipo local `ReservationListItem` para tipar el render de la lista de reservas
+- se actualizo el `map` a `reservation: ReservationListItem`
+
+### Impacto funcional
+- evita el error de compilacion `Module '"@prisma/client"' has no exported member 'Reservation'`
+- mantiene tipado explicito en el panel admin sin depender del export del cliente Prisma
+
+### Verificacion ejecutada
+- `npm run lint`
+- `npm run build`
+
+---
+
 ## Actualizacion - Hotfix de build en Vercel (TypeScript)
 
 ### Objetivo
