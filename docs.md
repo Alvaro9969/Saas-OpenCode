@@ -300,3 +300,55 @@ El script falla si falta alguno de estos elementos:
 ### Pendiente recomendado
 - normalizar historial de migraciones para evitar dependencia futura de `db push`
 - reemplazar `+34911000000` por numero real de Twilio en `PhoneNumber`
+
+---
+
+## Actualizacion - Integracion inicial con Vapi (Fase 1)
+
+### Objetivo
+Habilitar entrada de eventos Vapi para registrar ciclo de llamada y transcripciones en el backend multi-tenant.
+
+### Archivos modificados
+- `app/api/voice/vapi/events/route.ts` (nuevo)
+- `lib/voice/vapiWebhook.ts` (nuevo)
+
+### Cambios aplicados
+
+#### 1) Webhook de eventos Vapi
+Se creo `POST /api/voice/vapi/events` con estas responsabilidades:
+- validacion de firma del webhook
+- parseo robusto de payload (soporta variantes `message` y `call`)
+- resolucion de `restaurantId` por:
+  - `metadata.restaurantId` (si viene en el evento)
+  - numero destino (`to`) en `PhoneNumber` activo
+- upsert en `Call` usando `providerCallSid = callId`
+- persistencia de lineas de transcripcion en `CallTranscript`
+
+#### 2) Estado de llamada normalizado
+Se mapean estados de Vapi al enum interno `CallStatus`:
+- `queued` -> `initiated`
+- `ringing` -> `ringing`
+- `in-progress` / `ongoing` -> `in_progress`
+- `completed` / `ended` -> `completed`
+- `failed` / `error` -> `failed`
+- `no-answer` -> `no_answer`
+- `busy` -> `busy`
+- `canceled` / `cancelled` -> `canceled`
+
+#### 3) Validacion de firma Vapi
+Se implemento `isValidVapiSignature` en `lib/voice/vapiWebhook.ts`:
+- usa HMAC-SHA256 sobre el body raw
+- acepta cabeceras `x-vapi-signature` y `x-vapi-signature-sha256`
+- compara en tiempo constante (`timingSafeEqual`)
+- soporta firma en formato `sha256=...`, `hex` o `base64`
+
+### Variables de entorno nuevas
+- `VAPI_WEBHOOK_SECRET` (obligatoria para aceptar webhooks)
+
+### Impacto funcional
+- el proyecto ya puede recibir eventos de Vapi y guardarlos en tablas de llamadas/transcripcion
+- queda lista la base para siguiente fase: tool-calling seguro (`checkAvailability` y `createReservation`)
+
+### Verificacion ejecutada
+- `npm run lint`
+- `npm run build`
