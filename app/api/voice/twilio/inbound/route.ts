@@ -4,8 +4,17 @@ import {
   isValidTwilioSignature,
   parseTwilioFormParams,
 } from "@/lib/voice/twilioWebhook";
-import { CallStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+
+type CallStatus =
+  | "initiated"
+  | "ringing"
+  | "in_progress"
+  | "completed"
+  | "failed"
+  | "no_answer"
+  | "busy"
+  | "canceled";
 
 const TWILIO_XML_HEADERS = {
   "Content-Type": "text/xml; charset=utf-8",
@@ -14,23 +23,23 @@ const TWILIO_XML_HEADERS = {
 function mapTwilioCallStatus(callStatus: string | undefined): CallStatus {
   switch (callStatus) {
     case "queued":
-      return CallStatus.initiated;
+      return "initiated";
     case "ringing":
-      return CallStatus.ringing;
+      return "ringing";
     case "in-progress":
-      return CallStatus.in_progress;
+      return "in_progress";
     case "completed":
-      return CallStatus.completed;
+      return "completed";
     case "failed":
-      return CallStatus.failed;
+      return "failed";
     case "busy":
-      return CallStatus.busy;
+      return "busy";
     case "no-answer":
-      return CallStatus.no_answer;
+      return "no_answer";
     case "canceled":
-      return CallStatus.canceled;
+      return "canceled";
     default:
-      return CallStatus.initiated;
+      return "initiated";
   }
 }
 
@@ -80,7 +89,7 @@ export async function POST(request: NextRequest) {
         fromPhoneE164,
         toPhoneE164,
         status: mappedStatus,
-        startedAt: mappedStatus === CallStatus.in_progress ? now : undefined,
+        startedAt: mappedStatus === "in_progress" ? now : undefined,
       },
       create: {
         restaurantId: phoneNumber.restaurantId,
@@ -90,7 +99,7 @@ export async function POST(request: NextRequest) {
         fromPhoneE164,
         toPhoneE164,
         status: mappedStatus,
-        startedAt: mappedStatus === CallStatus.in_progress ? now : undefined,
+        startedAt: mappedStatus === "in_progress" ? now : undefined,
       },
     });
 

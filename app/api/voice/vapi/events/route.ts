@@ -1,7 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { isValidVapiSignature } from "@/lib/voice/vapiWebhook";
-import { CallStatus, TranscriptSpeaker } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+
+type CallStatus =
+  | "initiated"
+  | "ringing"
+  | "in_progress"
+  | "completed"
+  | "failed"
+  | "no_answer"
+  | "busy"
+  | "canceled";
+
+type TranscriptSpeaker = "system" | "assistant" | "caller" | "tool";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -39,29 +50,29 @@ function asDate(value: unknown): Date | null {
 function parseStatus(status: string | null): CallStatus {
   switch (status) {
     case "queued":
-      return CallStatus.initiated;
+      return "initiated";
     case "ringing":
-      return CallStatus.ringing;
+      return "ringing";
     case "in-progress":
     case "in_progress":
     case "ongoing":
-      return CallStatus.in_progress;
+      return "in_progress";
     case "completed":
     case "ended":
-      return CallStatus.completed;
+      return "completed";
     case "failed":
     case "error":
-      return CallStatus.failed;
+      return "failed";
     case "no-answer":
     case "no_answer":
-      return CallStatus.no_answer;
+      return "no_answer";
     case "busy":
-      return CallStatus.busy;
+      return "busy";
     case "cancelled":
     case "canceled":
-      return CallStatus.canceled;
+      return "canceled";
     default:
-      return CallStatus.initiated;
+      return "initiated";
   }
 }
 
@@ -70,27 +81,27 @@ function parseSpeaker(value: string | null): TranscriptSpeaker {
     case "assistant":
     case "bot":
     case "agent":
-      return TranscriptSpeaker.assistant;
+      return "assistant";
     case "caller":
     case "customer":
     case "user":
-      return TranscriptSpeaker.caller;
+      return "caller";
     case "tool":
-      return TranscriptSpeaker.tool;
+      return "tool";
     case "system":
-      return TranscriptSpeaker.system;
+      return "system";
     default:
-      return TranscriptSpeaker.system;
+      return "system";
   }
 }
 
 function isTerminalStatus(status: CallStatus) {
   return (
-    status === CallStatus.completed ||
-    status === CallStatus.failed ||
-    status === CallStatus.no_answer ||
-    status === CallStatus.busy ||
-    status === CallStatus.canceled
+    status === "completed" ||
+    status === "failed" ||
+    status === "no_answer" ||
+    status === "busy" ||
+    status === "canceled"
   );
 }
 
@@ -287,7 +298,7 @@ export async function POST(request: NextRequest) {
         status: extracted.status,
         startedAt:
           extracted.startedAt ??
-          (extracted.status === CallStatus.in_progress ? now : undefined),
+          (extracted.status === "in_progress" ? now : undefined),
         endedAt: endedAt ?? undefined,
         durationSec: extracted.durationSec ?? undefined,
         finalIntent: extracted.finalIntent ?? undefined,
@@ -302,7 +313,7 @@ export async function POST(request: NextRequest) {
         status: extracted.status,
         startedAt:
           extracted.startedAt ??
-          (extracted.status === CallStatus.in_progress ? now : undefined),
+          (extracted.status === "in_progress" ? now : undefined),
         endedAt: endedAt ?? undefined,
         durationSec: extracted.durationSec ?? undefined,
         finalIntent: extracted.finalIntent ?? undefined,

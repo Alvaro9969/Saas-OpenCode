@@ -123,6 +123,34 @@ Se elimino `lib/restaurants/getCurrentRestaurantId.ts` porque ya no se usa y man
 
 ---
 
+## Actualizacion - Compatibilidad de enums Prisma en deploy
+
+### Objetivo
+Resolver fallos de build en Vercel por imports de enums (`CallStatus`, `TranscriptSpeaker`) no exportados en ese entorno de cliente Prisma.
+
+### Archivos modificados
+- `app/api/voice/twilio/inbound/route.ts`
+- `app/api/voice/twilio/status/route.ts`
+- `app/api/voice/vapi/events/route.ts`
+
+### Cambios aplicados
+- se eliminaron imports de enums desde `@prisma/client`
+- se definieron tipos locales string-literal para:
+  - `CallStatus`
+  - `TranscriptSpeaker`
+- se actualizaron mapeos y comparaciones para usar valores string (`"in_progress"`, `"completed"`, etc.)
+
+### Impacto funcional
+- mantiene exactamente la misma logica de negocio de estados/transcripciones
+- elimina dependencia de exports de enums del cliente Prisma en build remoto
+- mejora estabilidad de despliegue en Vercel
+
+### Verificacion ejecutada
+- `npm run lint`
+- `npm run build`
+
+---
+
 ## Actualizacion - Fix TypeScript en `opening-hours` para deploy
 
 ### Objetivo
