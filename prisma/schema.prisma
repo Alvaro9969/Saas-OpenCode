@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Restaurant {
+  id           String        @id
+  name         String
+  slug         String?       @unique
+  timeZone     String        @default("Europe/Madrid")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @default(now()) @updatedAt
+
+  reservations Reservation[]
+  settings     RestaurantSettings?
+  openingHours OpeningHours[]
+  users        User[]
+  phoneNumbers PhoneNumber[]
+  calls        Call[]
+  transcripts  CallTranscript[]
+  blockedSlots BlockedSlot[]
+  agentConfig  AgentConfig?
+}
+
+model Reservation {
+  id           String      @id @default(cuid())
+  restaurantId String
+  customerName String
+  phone        String?
+  dateTime     DateTime
+  partySize    Int
+  status       String      @default("confirmed")
+  createdAt    DateTime    @default(now())
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+  @@index([restaurantId, dateTime])
+  @@index([restaurantId, status])
+}
+
+model RestaurantSettings {
+  id                     String     @id @default(cuid())
+  restaurantId           String     @unique
+  maxGuestsPerSlot       Int        @default(10)
+  reservationDurationMin Int        @default(90)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @default(now()) @updatedAt
+
+  restaurant             Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+}
+
+model OpeningHours {
+  id           String     @id @default(cuid())
+  restaurantId String
+  dayOfWeek    Int
+  openTime     String
+  closeTime    String
+  isClosed     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, dayOfWeek])
+}
+
+model User {
+  id             String   @id @default(cuid())
+  name           String?
+  email          String   @unique
+  passwordHash   String
+  role           UserRole @default(manager)
+
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PhoneNumber {
+  id           String     @id @default(cuid())
+  restaurantId String
+  provider     String     @default("twilio")
+  phoneE164    String     @unique
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  calls        Call[]
+
+  @@index([restaurantId])
+  @@index([restaurantId, isActive])
+}
+
+model AgentConfig {
+  id                          String     @id @default(cuid())
+  restaurantId                String     @unique
+  language                    String     @default("es")
+  assistantName               String     @default("Asistente de reservas")
+  welcomeMessage              String?
+  sameDayReservationsEnabled  Boolean    @default(true)
+  handoffToHumanEnabled       Boolean    @default(false)
+  cancellationPolicy          String?
+  createdAt                   DateTime   @default(now())
+  updatedAt                   DateTime   @default(now()) @updatedAt
+
+  restaurant                  Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+}
+
+model BlockedSlot {
+  id           String     @id @default(cuid())
+  restaurantId String
+  startDateTime DateTime
+  endDateTime   DateTime
+  reason        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, startDateTime])
+  @@index([restaurantId, endDateTime])
+}
+
+model Call {
+  id                    String        @id @default(cuid())
+  restaurantId          String
+  phoneNumberId         String?
+  provider              String        @default("twilio")
+  providerCallSid       String?       @unique
+  fromPhoneE164         String
+  toPhoneE164           String
+  status                CallStatus    @default(initiated)
+  startedAt             DateTime?
+  endedAt               DateTime?
+  durationSec           Int?
+  finalIntent           String?
+  finalResult           String?
+  errorCode             String?
+  errorMessage          String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @default(now()) @updatedAt
+
+  restaurant            Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  phoneNumber           PhoneNumber?  @relation(fields: [phoneNumberId], references: [id], onDelete: SetNull)
+  transcripts           CallTranscript[]
+
+  @@index([restaurantId])
+  @@index([restaurantId, status])
+  @@index([restaurantId, createdAt])
+}
+
+model CallTranscript {
+  id           String           @id @default(cuid())
+  restaurantId String
+  callId       String
+  speaker      TranscriptSpeaker
+  content      String
+  startedAt    DateTime?
+  endedAt      DateTime?
+  createdAt    DateTime         @default(now())
+
+  restaurant   Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  call         Call             @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, createdAt])
+  @@index([callId, createdAt])
+}
+
+enum UserRole {
+  owner
+  manager
+  staff
+}
+
+enum CallStatus {
+  initiated
+  ringing
+  in_progress
+  completed
+  failed
+  no_answer
+  busy
+  canceled
+}
+
+enum TranscriptSpeaker {
+  system
+  assistant
+  caller
+  tool
+}
